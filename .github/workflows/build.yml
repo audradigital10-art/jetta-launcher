@@ -1,0 +1,52 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Baixar fontes Barlow (Google Fonts, licença OFL)
+        run: |
+          mkdir -p app/src/main/assets/fonts
+          base=https://raw.githubusercontent.com/google/fonts/main/ofl
+          for f in barlowcondensed/BarlowCondensed-SemiBoldItalic.ttf barlowcondensed/BarlowCondensed-BoldItalic.ttf barlow/Barlow-Regular.ttf barlow/Barlow-Medium.ttf; do
+            curl -fsSL -o "app/src/main/assets/fonts/$(basename $f)" "$base/$f" || echo "Fonte $f indisponivel, usando a do sistema"
+          done
+          ls -la app/src/main/assets/fonts
+
+      - name: Compilar
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Renomear APK
+        run: cp app/build/outputs/apk/release/app-release.apk JettaLauncher.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JettaLauncher
+          path: JettaLauncher.apk
+
+      - name: Publicar versão
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Jetta Launcher 1.0.${{ github.run_number }}
+          files: JettaLauncher.apk
+          make_latest: true

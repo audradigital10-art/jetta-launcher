@@ -1,0 +1,49 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
+
+android {
+    namespace 'com.cleuber.jettalauncher'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.cleuber.jettalauncher'
+        minSdk 24
+        targetSdk 33
+        versionCode runNumber
+        versionName "1.0.${runNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // Chave fixa: assim cada nova versão instala por cima da anterior sem perder as personalizações.
+            storeFile file('jetta-launcher.keystore')
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'jettalauncher'
+            keyAlias 'jetta'
+            keyPassword System.getenv('KEYSTORE_PASSWORD') ?: 'jettalauncher'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
